@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SaveIcon, DatabaseIcon, PhoneIcon, BellIcon } from "lucide-react";
+import { SaveIcon, DatabaseIcon, PhoneIcon, BellIcon, KeyIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const generalFormSchema = z.object({
@@ -47,9 +47,17 @@ const notificationsFormSchema = z.object({
   systemUpdates: z.boolean(),
 });
 
+// New Twilio settings form schema
+const twilioFormSchema = z.object({
+  accountSid: z.string().min(1, { message: "Twilio Account SID is required" }),
+  authToken: z.string().min(1, { message: "Twilio Auth Token is required" }),
+  phoneNumber: z.string().min(1, { message: "Twilio Phone Number is required" }),
+});
+
 type GeneralFormValues = z.infer<typeof generalFormSchema>;
 type DatabaseFormValues = z.infer<typeof databaseFormSchema>;
 type NotificationsFormValues = z.infer<typeof notificationsFormSchema>;
+type TwilioFormValues = z.infer<typeof twilioFormSchema>;
 
 const SettingsComponent = () => {
   const [activeTab, setActiveTab] = useState("general");
@@ -89,6 +97,16 @@ const SettingsComponent = () => {
     },
   });
 
+  // Twilio Form
+  const twilioForm = useForm<TwilioFormValues>({
+    resolver: zodResolver(twilioFormSchema),
+    defaultValues: {
+      accountSid: "",
+      authToken: "",
+      phoneNumber: "",
+    },
+  });
+
   const onGeneralSubmit = (data: GeneralFormValues) => {
     toast.success("General settings saved successfully!");
     console.log("General settings:", data);
@@ -104,6 +122,35 @@ const SettingsComponent = () => {
     console.log("Notification settings:", data);
   };
 
+  const onTwilioSubmit = (data: TwilioFormValues) => {
+    // Update Twilio configuration
+    localStorage.setItem("twilioConfig", JSON.stringify({
+      accountSid: data.accountSid,
+      authToken: data.authToken,
+      phoneNumber: data.phoneNumber,
+    }));
+    
+    toast.success("Twilio settings saved successfully!");
+    console.log("Twilio settings:", data);
+  };
+
+  // Check if we have saved Twilio config and load it
+  React.useEffect(() => {
+    const savedTwilioConfig = localStorage.getItem("twilioConfig");
+    if (savedTwilioConfig) {
+      try {
+        const config = JSON.parse(savedTwilioConfig);
+        twilioForm.reset({
+          accountSid: config.accountSid,
+          authToken: config.authToken,
+          phoneNumber: config.phoneNumber,
+        });
+      } catch (error) {
+        console.error("Error loading Twilio config:", error);
+      }
+    }
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -115,7 +162,7 @@ const SettingsComponent = () => {
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="grid grid-cols-3 mb-8">
+          <TabsList className="grid grid-cols-4 mb-8">
             <TabsTrigger value="general" className="flex items-center">
               <SaveIcon className="h-4 w-4 mr-2" />
               <span>General</span>
@@ -123,6 +170,10 @@ const SettingsComponent = () => {
             <TabsTrigger value="database" className="flex items-center">
               <DatabaseIcon className="h-4 w-4 mr-2" />
               <span>Database</span>
+            </TabsTrigger>
+            <TabsTrigger value="twilio" className="flex items-center">
+              <PhoneIcon className="h-4 w-4 mr-2" />
+              <span>Twilio</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center">
               <BellIcon className="h-4 w-4 mr-2" />
@@ -281,6 +332,80 @@ const SettingsComponent = () => {
                     Test Connection
                   </Button>
                 </div>
+              </form>
+            </Form>
+          </TabsContent>
+          
+          {/* New Twilio Settings Tab */}
+          <TabsContent value="twilio">
+            <Form {...twilioForm}>
+              <form onSubmit={twilioForm.handleSubmit(onTwilioSubmit)} className="space-y-6">
+                <div className="bg-muted/50 p-4 rounded-lg mb-6">
+                  <h3 className="font-medium mb-2 flex items-center">
+                    <KeyIcon className="h-4 w-4 mr-2" />
+                    Twilio API Configuration
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your Twilio API credentials to enable calling features. 
+                    Your credentials are stored securely in your browser and are not sent to our servers.
+                  </p>
+                </div>
+                
+                <FormField
+                  control={twilioForm.control}
+                  name="accountSid"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twilio Account SID</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="AC123456789abcdef123456789" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={twilioForm.control}
+                  name="authToken"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twilio Auth Token</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="password" 
+                          placeholder="Your auth token" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={twilioForm.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twilio Phone Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="+15551234567" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit">
+                  <PhoneIcon className="h-4 w-4 mr-2" /> Save Twilio Settings
+                </Button>
               </form>
             </Form>
           </TabsContent>

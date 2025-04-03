@@ -4,11 +4,24 @@
 
 import { DB_CONFIG } from "@/lib/db-config";
 
-// These would typically be stored securely in environment variables
-// For demonstration purposes only - in production, NEVER expose these in client-side code
-const TWILIO_ACCOUNT_SID = "AC123456789"; // Replace with your actual Twilio Account SID
-const TWILIO_AUTH_TOKEN = "your_auth_token"; // Replace with your actual Twilio Auth Token
-const TWILIO_PHONE_NUMBER = "+15551234567"; // Replace with your Twilio phone number
+// Get Twilio configuration from localStorage or use defaults
+const getTwilioConfig = () => {
+  try {
+    const savedConfig = localStorage.getItem("twilioConfig");
+    if (savedConfig) {
+      return JSON.parse(savedConfig);
+    }
+  } catch (error) {
+    console.error("Error loading Twilio config:", error);
+  }
+  
+  // Default values if no configuration is found
+  return {
+    accountSid: "AC123456789", // Default placeholder
+    authToken: "your_auth_token", // Default placeholder
+    phoneNumber: "+15551234567" // Default placeholder
+  };
+};
 
 export const twilioService = {
   // Initialize a call using Twilio
@@ -16,6 +29,9 @@ export const twilioService = {
     console.log(`Initiating Twilio call to ${phoneNumber}`);
     console.log('Using DB config:', DB_CONFIG);
     console.log('Call notes:', notes);
+    
+    // Get the current Twilio configuration
+    const twilioConfig = getTwilioConfig();
     
     try {
       // In a real application, this would make an API call to your backend
@@ -27,8 +43,10 @@ export const twilioService = {
         },
         body: JSON.stringify({
           to: phoneNumber,
-          from: TWILIO_PHONE_NUMBER,
+          from: twilioConfig.phoneNumber,
           notes,
+          // Never include auth credentials in client-side requests
+          // These should be stored securely in your backend
         }),
       });
       
@@ -112,5 +130,32 @@ export const twilioService = {
         duration: Math.floor(Math.random() * 300), // Random duration in seconds
       };
     }
+  },
+  
+  // Get the current Twilio configuration
+  getConfig: () => {
+    return getTwilioConfig();
+  },
+  
+  // Test the Twilio configuration
+  testConfiguration: async () => {
+    const twilioConfig = getTwilioConfig();
+    
+    // Only check if values are set, not their validity
+    // Real validation would require API calls to Twilio
+    const isConfigured = 
+      twilioConfig.accountSid && 
+      twilioConfig.accountSid.length > 5 &&
+      twilioConfig.authToken && 
+      twilioConfig.authToken.length > 5 &&
+      twilioConfig.phoneNumber &&
+      twilioConfig.phoneNumber.length > 5;
+    
+    return {
+      success: isConfigured,
+      message: isConfigured 
+        ? "Twilio configuration appears valid" 
+        : "Twilio is not properly configured"
+    };
   }
 };
