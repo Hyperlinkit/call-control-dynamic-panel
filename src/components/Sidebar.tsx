@@ -1,16 +1,26 @@
 
-import { Link, useLocation } from "react-router-dom";
-import { PhoneCall, Users, BarChart3, Settings, Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { PhoneCall, Users, BarChart3, Settings, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Successfully logged out");
+    navigate("/login");
   };
 
   const menuItems = [
@@ -95,16 +105,31 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      <div className="p-4 border-t border-sidebar-border flex items-center">
-        <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-          <span className="text-sidebar-foreground text-xs font-medium">AD</span>
-        </div>
-        {!collapsed && (
-          <div className="ml-3">
-            <p className="text-sidebar-foreground font-medium text-sm">Admin User</p>
-            <p className="text-sidebar-foreground text-xs opacity-70">admin@example.com</p>
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <span className="text-sidebar-foreground text-xs font-medium">
+                {user?.username?.substring(0, 2).toUpperCase() || "AD"}
+              </span>
+            </div>
+            {!collapsed && (
+              <div className="ml-3">
+                <p className="text-sidebar-foreground font-medium text-sm">{user?.username || "Admin User"}</p>
+                <p className="text-sidebar-foreground text-xs opacity-70">{user?.role || "admin"}</p>
+              </div>
+            )}
           </div>
-        )}
+          
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleLogout}
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
