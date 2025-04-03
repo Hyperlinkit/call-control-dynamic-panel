@@ -1,5 +1,6 @@
 
 import { DB_CONFIG } from "@/lib/db-config";
+import { twilioService } from "./twilioService";
 
 // This is a mock service for frontend demonstration
 // In a real application, these would communicate with a backend API
@@ -29,17 +30,17 @@ export const dbService = {
     console.log('Using DB config:', DB_CONFIG);
     
     try {
-      // In a real app, this would be an API call to the backend
-      // return await fetch('/api/calls', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ phoneNumber, notes })
-      // }).then(res => res.json());
+      // In a real app, this would be an API call to the backend that would:
+      // 1. Use Twilio to initiate the call
+      // 2. Store the call information in the database
       
-      // Mock response
+      // For our demonstration, we'll use the twilioService to simulate a call
+      const callResult = await twilioService.initiateCall(phoneNumber, notes);
+      
+      // Mock response with data from Twilio
       return {
         success: true,
-        callId: Math.floor(Math.random() * 1000000),
+        callId: callResult.callId || Math.floor(Math.random() * 1000000),
         timestamp: new Date()
       };
     } catch (error) {
